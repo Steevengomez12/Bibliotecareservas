@@ -13,7 +13,7 @@ public class Reserva {
     private final int duracionHoras;
     private final int cantidadPersonas;
     private final Sala sala;
-    private EstadoReserva estado;
+    private String estado = "Pendiente";
     private final List<ObservadorReserva> observadores = new ArrayList<>();
 
     Reserva(String codigo, Estudiante estudiante, LocalDate fecha,
@@ -25,7 +25,6 @@ public class Reserva {
         this.duracionHoras = duracionHoras;
         this.cantidadPersonas = cantidadPersonas;
         this.sala = sala;
-        this.estado = new Pendiente();
     }
 
     public String getCodigo() { return codigo; }
@@ -35,7 +34,7 @@ public class Reserva {
     public int getDuracionHoras() { return duracionHoras; }
     public int getCantidadPersonas() { return cantidadPersonas; }
     public Sala getSala() { return sala; }
-    public String getNombreEstado() { return estado.nombre(); }
+    public String getNombreEstado() { return estado; }
 
     public void agregarObservador(ObservadorReserva observador) {
         if (observador != null) observadores.add(observador);
@@ -45,16 +44,21 @@ public class Reserva {
         observadores.remove(observador);
     }
 
-    public void confirmar() { estado.confirmar(this); }
-    public void cancelar() { estado.cancelar(this); }
-    public void finalizar() { estado.finalizar(this); }
+    public void confirmar() { cambiarEstado("Confirmada"); }
+    public void cancelar() { cambiarEstado("Cancelada"); }
+    public void finalizar() { cambiarEstado("Finalizada"); }
 
-    void cambiarEstado(EstadoReserva nuevoEstado) {
-        String anterior = estado.nombre();
-        this.estado = nuevoEstado;
-        String actual = estado.nombre();
+    private void cambiarEstado(String nuevoEstado) {
+        if (estado.equals("Cancelada") || estado.equals("Finalizada")) {
+            throw new IllegalStateException("La reserva ya no admite cambios.");
+        }
+        if (estado.equals("Confirmada") && nuevoEstado.equals("Confirmada")) {
+            throw new IllegalStateException("La reserva ya está confirmada.");
+        }
+        String anterior = estado;
+        estado = nuevoEstado;
         for (ObservadorReserva observador : List.copyOf(observadores)) {
-            observador.actualizar(this, anterior, actual);
+            observador.actualizar(this, anterior, estado);
         }
     }
 
@@ -62,6 +66,6 @@ public class Reserva {
     public String toString() {
         return "Reserva " + codigo + " | " + estudiante.getNombre()
                 + " | " + fecha + " " + horaInicio + " | " + sala
-                + " | Estado: " + getNombreEstado();
+                + " | Estado: " + estado;
     }
 }
